@@ -1,23 +1,39 @@
 import cv2
 import numpy as np
 
-
-
 #returns angle cosine given three points
 def angle_cos(p0, p1, p2):
 	d1, d2 = (p0-p1).astype('float'), (p2-p1).astype('float')
 	return abs( np.dot(d1, d2) / np.sqrt( np.dot(d1, d1)*np.dot(d2, d2) ) )
 
-#processes an image by resizing, 
-def imageProcessing(image):
-	#resize image for better viewing
-	r = 1000.0 / image.shape[1]
-	dim = (1000, int(image.shape[0] * r))
-	resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
 
-	#applies a Gaussian blur
-	blurred = cv2.GaussianBlur(resized, (5, 5), 0)
+#takes in a processed image, returns top rectangle, index of top rectangle, and all possiblerectangles
+def findRectangles(processedImage):
+	#possible rectangle finders
+	possibleRectangles = possibleRectangleFinder(processedImage)
+
+	#eliminate rectangles that are too large and picks top rectangle
+	targetSize = (processedImage.shape[0]) * (processedImage.shape[1]) * 0.9
+	#targetSize = "size of template rectangle" #alternative solution depending on UI later on
+	
+	topRectangleIndex = pickTopRectangle(possibleRectangles, targetSize)
+	topRectangle = possibleRectangles[topRectangleIndex]
+	return topRectangle, topRectangleIndex, possibleRectangles
+
+
+#processes an image by applying a Gaussian blur
+def imageBlur(image):
+	blurred = cv2.GaussianBlur(image, (5, 5), 0)
 	return blurred
+
+
+#resize image for better viewing, takes in image, size of larger side
+def imageResize(image, size):
+	r = float(size) / image.shape[1]
+	dim = (int(size), int(image.shape[0] * r))
+	resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
+	return resized
+
 
 #returns index of largest rectangle smaller than the target size
 def pickTopRectangle(possibleRectangles, targetSize):
@@ -53,29 +69,28 @@ def possibleRectangleFinder(image):
 						rectangles.append(cnt)
 	return rectangles
 
+
 #shows image
 def showImage(imageName, image):
 	cv2.imshow(imageName, image)
 	cv2.waitKey(0)
 	cv2.destroyAllWindows
 
-#takes in an image, returns possible rectangles
-def findRectangles(fileName):
+#writes image
+def writeImage(imageName, image):
+	cv2.imwrite(imageName,image)
+
+#displays region of interest
+def findROI(fileName):
 	#read image
 	image = cv2.imread(fileName)
 
 	#image pre-processing (resize and blur)
-	processedImage = imageProcessing(image)
+	blurredImage = imageBlur(image)
+	processedImage = imageResize(image, 2000)
 
-	#possible rectangle finders
-	possibleRectangles = possibleRectangleFinder(processedImage)
-
-	#eliminate rectangles that are too large and picks top rectangle
-	targetSize = (processedImage.shape[0]) * (processedImage.shape[1]) * 0.9
-	#alternative solution depending on UI later on
-	#targetSize = "size of template rectangle"
-	topRectangleIndex = pickTopRectangle(possibleRectangles, targetSize)
-	topRectangle = possibleRectangles[topRectangleIndex]
+	#finds rectangles and picks the top size
+	topRectangle, topRectangleIndex, possibleRectangles = findRectangles(processedImage)
 
 	#draws rectangles onto image
 	cv2.drawContours(processedImage, possibleRectangles, topRectangleIndex, (0, 255, 0), 3 )
@@ -83,21 +98,11 @@ def findRectangles(fileName):
 	#draws bounding rectangle
 	x,y,w,h = cv2.boundingRect(topRectangle)
 	cv2.rectangle(processedImage,(x,y),(x+w,y+h),(255,0,0),2)
-	midpoint = (int(x + w * 0.5), int(y + h * 0.5))
+
 	#draw circle
+	midpoint = (int(x + w * 0.5), int(y + h * 0.5))
 	cv2.circle(processedImage, midpoint, int(w * 0.2), (0,0,255), 3)
+	resizedImage = imageResize(processedImage, 1000)
+	showImage("rectangles", resizedImage)
 
-	###################TODO###############################
-	#1) deal with rounded rectangle
-	#2) perspective correction
-	#3) detection of colored spot on center of image
-	#4) quantify color of spot
-
-	showImage("rectangles", processedImage)
-
-	return topRectangle
-
-
-
-
-
+	return resizedImage
