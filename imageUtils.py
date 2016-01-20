@@ -1,11 +1,7 @@
 import cv2
 import numpy as np
 
-#shows image
-def showImage(imageName, image):
-	cv2.imshow(imageName, image)
-	cv2.waitKey(0)
-	cv2.destroyAllWindows
+
 
 #returns angle cosine given three points
 def angle_cos(p0, p1, p2):
@@ -22,6 +18,19 @@ def imageProcessing(image):
 	#applies a Gaussian blur
 	blurred = cv2.GaussianBlur(resized, (5, 5), 0)
 	return blurred
+
+#returns index of largest rectangle smaller than the target size
+def pickTopRectangle(possibleRectangles, targetSize):
+	areas = [cv2.contourArea(rectangle) for rectangle in possibleRectangles]
+	newAreas = []
+	for area in areas:
+		if area > targetSize:
+			newAreas.append(0)
+		else:
+			newAreas.append(area)
+	max_index = np.argmax(newAreas)
+	return max_index
+
 
 #returns possible squares
 def possibleRectangleFinder(image):
@@ -44,6 +53,12 @@ def possibleRectangleFinder(image):
 						rectangles.append(cnt)
 	return rectangles
 
+#shows image
+def showImage(imageName, image):
+	cv2.imshow(imageName, image)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows
+
 #takes in an image, returns possible rectangles
 def findRectangles(fileName):
 	#read image
@@ -55,18 +70,32 @@ def findRectangles(fileName):
 	#possible rectangle finders
 	possibleRectangles = possibleRectangleFinder(processedImage)
 
+	#eliminate rectangles that are too large and picks top rectangle
+	targetSize = (processedImage.shape[0]) * (processedImage.shape[1]) * 0.9
+	#alternative solution depending on UI later on
+	#targetSize = "size of template rectangle"
+	topRectangleIndex = pickTopRectangle(possibleRectangles, targetSize)
+	topRectangle = possibleRectangles[topRectangleIndex]
+
 	#draws rectangles onto image
-	cv2.drawContours(processedImage, possibleRectangles,0, (0, 255, 0), 3 )
+	cv2.drawContours(processedImage, possibleRectangles, topRectangleIndex, (0, 255, 0), 3 )
+
+	#draws bounding rectangle
+	x,y,w,h = cv2.boundingRect(topRectangle)
+	cv2.rectangle(processedImage,(x,y),(x+w,y+h),(255,0,0),2)
+	midpoint = (int(x + w * 0.5), int(y + h * 0.5))
+	#draw circle
+	cv2.circle(processedImage, midpoint, int(w * 0.2), (0,0,255), 3)
 
 	###################TODO###############################
-	#1) validate each rectangle as possible candidate
-	#2) identify region of interest for each device (based on physical measurements)
+	#1) deal with rounded rectangle
+	#2) perspective correction
 	#3) detection of colored spot on center of image
 	#4) quantify color of spot
 
 	showImage("rectangles", processedImage)
 
-	return possibleRectangles
+	return topRectangle
 
 
 
