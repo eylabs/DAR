@@ -23,3 +23,16 @@ def getProcessedImageName(fileName):
 		pass
 	#creates new file name
 	return "%s\%s_processed%s"%(img_dir, fileName.split(".")[0].split("\\")[-1], pconfig.extension[1:])
+
+def writeInfo(info):
+	outputFileDirectory = os.path.join(pconfig.MAIN_PATH, "results")
+	try:
+		os.makedirs(outputFileDirectory)
+	except OSError:
+		pass
+	outputFileName = os.path.join(outputFileDirectory, "%s.txt" % (pconfig.FOLDER_OF_INTEREST))
+	with open(outputFileName, "wb") as outfile:
+		outfile.write("RESULTS: \n\n")
+		for ii in info: #imageInfo
+			outfile.write("%s\nScore: %i\nTest Intensity: %i, Baseline Intensity: %i\nResult: %s\n\n" % (ii[0], ii[1], ii[2], ii[3], ii[4]))
+	return outputFileName

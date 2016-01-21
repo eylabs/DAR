@@ -214,4 +214,4 @@ def spotQuantifier(image, bbInfo):
 
 	#return spot intensity as difference between baseline and test dot 
 	score =  abs(testIntensity - baselineIntensity)
-	return score
+	return score, testIntensity, baselineIntensity

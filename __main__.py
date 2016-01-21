@@ -1,4 +1,4 @@
-from loadImages import getDirectoryName, getImages, getProcessedImageName
+from loadImages import getDirectoryName, getImages, getProcessedImageName, writeInfo
 from imageUtils import findROI, writeImage, spotQuantifier, showImage
 
 def main():
@@ -8,33 +8,41 @@ def main():
 	#get images
 	imageFiles = getImages(directoryName)
 
+	#information to be written
+	info = []
+
 	#loop through images
 	for fileName in imageFiles:
+		#info for each image in form [fileName, score, testIntensity, baselineIntensity, result]
+		imageInfo = []
+
 		#finds rectangles, validates rectangles, finds region of interest, returns processed image and bounding box info
 		#optional parameter for ROI "drawCircle = true" to draw circle around ROI
 		processedImage, bbInfo = findROI(fileName)
 		#writes image to folder "processed_" + original folder name
 		processedImageName = getProcessedImageName(fileName)
 		print processedImageName
+		imageInfo.append(processedImageName)
 		writeImage(processedImageName, processedImage)
 
 		#usees processed image to
-		score = spotQuantifier(processedImage, bbInfo)
+		score, testIntensity, baselineIntensity = spotQuantifier(processedImage, bbInfo)
+		imageInfo.extend([score, testIntensity, baselineIntensity])
 		print score
 		if score < 40:
 			print "POSITIVE"
 			print ""
+			imageInfo.append("POSITIVE")
 		else:
 			print "NEGATIVE"
 			print ""
+			imageInfo.append("NEGATIVE")
+		info.append(imageInfo)
 
-		###################TODO###############################
-	#CORE
-	#1) Improve circle detection - limit to one circle - only look in center-ish part of image
+	#writes to another file
+	print writeInfo(info)
+	print "done"
 
-	#SUPPLEMENTARY (non-issues atm)
-	#1) deal with rounded rectangle
-	#2) perspective correction
 
 if __name__ == "__main__":
     main()
