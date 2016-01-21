@@ -46,7 +46,7 @@ def findROI(fileName, drawCircle = False):
 	finalProcessedImage = processedImage.copy()
 
 	resizedImage = imageResize(processedImage, 1000)
-	#showImage("rectangles", resizedImage)
+	#showImage(resizedImage)
 
 	#returns resizedImage and information about the bounding box
 	return finalProcessedImage, [x, y, w, h]
@@ -70,7 +70,7 @@ def imageCrop(image, bbInfo):
 	x1 = x + w * 0.4
 	x2 = x + w * 0.6
 	croppedImage = image[y1:y2, x1: x2]
-	#showImage("yes", croppedImage)
+	#showImage(croppedImage)
 	return croppedImage
 
 
@@ -118,7 +118,7 @@ def possibleRectangleFinder(image):
 
 
 #shows image
-def showImage(imageName = "test", image):
+def showImage(image, imageName = "test"):
 	cv2.imshow(imageName, image)
 	cv2.waitKey(0)
 	cv2.destroyAllWindows
@@ -127,13 +127,46 @@ def showImage(imageName = "test", image):
 def writeImage(imageName, image):
 	cv2.imwrite(imageName,image)
 
+#must be grayscale
+def imageInvert(image):
+	if len(image.shape) == 2:
+		return cv2.bitwise_not(image)
+	else:
+		print "image not inverted. grayscale needed"
+		return image
+
+#erodes edges of grayscale to make edges more sharp
+def imageErode(image):
+	kernel = np.ones((5,5),np.uint8)
+	return cv2.erode(image, kernel ,iterations = 1)
+
+
 #detects spot by cropping image, looking for spot, and quantifying spot intensity
 def spotQuantifier(image, bbInfo):
 	croppedImage = imageCrop(image, bbInfo)
-	gray = cv2.cvtColor(croppedImage,cv2.COLOR_BGR2GRAY)
-	showImage("gray", gray)
-	ret,thresh1 = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
-	showImage("thresh1", thresh1)
-	
-	#quantifies spot
-	return 0
+	output = croppedImage.copy()
+	gray = cv2.cvtColor(croppedImage, cv2.COLOR_BGR2GRAY) #changes croppedImage as well
+	blurredGray = imageBlur(gray)
+	blurredGrayInvert = imageInvert(blurredGray)
+	erodedBlurredGrayInvert = imageErode(blurredGrayInvert)
+	ret, processedImage = cv2.threshold(erodedBlurredGrayInvert, 127, 255, cv2.THRESH_BINARY)
+	circles = cv2.HoughCircles(processedImage, cv2.HOUGH_GRADIENT, 1, 20, param1 = 100, param2 = 15, minRadius = 10)
+	spotIntensity = 0
+	# ensure at least some circles were found
+	if circles is not None:
+		# convert the (x, y) coordinates and radius of the circles to integers
+		circles = np.round(circles[0, :]).astype("int")
+	 
+		# loop over the (x, y) coordinates and radius of the circles
+		for (x, y, r) in circles:
+			# draw the circle in the output image, then draw a rectangle
+			# corresponding to the center of the circle
+			cv2.circle(output, (x, y), r, (0, 255, 0), 4)
+			cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
+			print croppedImage.shape
+			print (x,y,r)
+			quantifyArea = croppedImage[y-20:y+20, x-20:x+20,]
+			#showImage(quantifyArea)
+			spotIntensity = np.average(quantifyArea)
+			showImage(np.hstack([croppedImage, output]))
+	return spotIntensity

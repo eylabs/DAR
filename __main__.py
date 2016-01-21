@@ -23,7 +23,7 @@ def main():
 
 		###################TODO###############################
 	#CORE
-	#4) quantify color of spot
+	#1) Improve circle detection - limit to one circle - only look in center-ish part of image
 
 	#SUPPLEMENTARY (non-issues atm)
 	#1) deal with rounded rectangle
