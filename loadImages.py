@@ -22,4 +22,4 @@ def getProcessedImageName(fileName):
 	except OSError:
 		pass
 	#creates new file name
-	return os.path.join(img_dir, "%s_processed%s"%(fileName.split(".")[0], pconfig.extension[1:]))
+	return "%s\%s_processed%s"%(img_dir, fileName.split(".")[0].split("\\")[-1], pconfig.extension[1:])

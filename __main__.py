@@ -1,5 +1,5 @@
 from loadImages import getDirectoryName, getImages, getProcessedImageName
-from imageUtils import findROI, writeImage
+from imageUtils import findROI, writeImage, spotQuantifier, showImage
 
 def main():
 	#get directory name
@@ -10,15 +10,19 @@ def main():
 
 	#loop through images
 	for fileName in imageFiles:
-		#finds rectangles, validates rectangles, finds region of interest, returns ROI
-		processedImage = findROI(fileName)
+		#finds rectangles, validates rectangles, finds region of interest, returns processed image and bounding box info
+		#optional parameter for ROI "drawCircle = true" to draw circle around ROI
+		processedImage, bbInfo = findROI(fileName)
 		#writes image to folder "processed_" + original folder name
 		processedImageName = getProcessedImageName(fileName)
 		writeImage(processedImageName, processedImage)
 
+		#usees processed image to
+		score = spotQuantifier(processedImage, bbInfo)
+		print score
+
 		###################TODO###############################
 	#CORE
-	#3) detection of colored spot on center of image
 	#4) quantify color of spot
 
 	#SUPPLEMENTARY (non-issues atm)

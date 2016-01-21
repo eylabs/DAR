@@ -20,11 +20,58 @@ def findRectangles(processedImage):
 	topRectangle = possibleRectangles[topRectangleIndex]
 	return topRectangle, topRectangleIndex, possibleRectangles
 
+#displays region of interest
+def findROI(fileName, drawCircle = False):
+	#read image
+	image = cv2.imread(fileName)
+
+	#image pre-processing (resize and blur)
+	blurredImage = imageBlur(image)
+	processedImage = imageResize(image, 2000)
+
+	#finds rectangles and picks the top size
+	topRectangle, topRectangleIndex, possibleRectangles = findRectangles(processedImage)
+
+	#draws rectangles onto image
+	cv2.drawContours(processedImage, possibleRectangles, topRectangleIndex, (0, 255, 0), 3 )
+
+	#draws bounding rectangle
+	x,y,w,h = cv2.boundingRect(topRectangle)
+	cv2.rectangle(processedImage,(x,y),(x+w,y+h),(255,0,0),2)
+
+	if drawCircle:
+		#draw circle
+		midpoint = (int(x + w * 0.5), int(y + h * 0.5))
+		cv2.circle(processedImage, midpoint, int(w * 0.1), (0,0,255), 3)
+	finalProcessedImage = processedImage.copy()
+
+	resizedImage = imageResize(processedImage, 1000)
+	#showImage("rectangles", resizedImage)
+
+	#returns resizedImage and information about the bounding box
+	return finalProcessedImage, [x, y, w, h]
 
 #processes an image by applying a Gaussian blur
 def imageBlur(image):
 	blurred = cv2.GaussianBlur(image, (5, 5), 0)
 	return blurred
+
+
+#crops image based on bounding box
+def imageCrop(image, bbInfo):
+	x = bbInfo[0]
+	y = bbInfo[1]
+	w = bbInfo[2]
+	h = bbInfo[3]
+
+	#crops image
+	y1 = y + h * 0.5 - w * 0.1
+	y2 = y + h * 0.5 + w * 0.1
+	x1 = x + w * 0.4
+	x2 = x + w * 0.6
+	croppedImage = image[y1:y2, x1: x2]
+	#showImage("yes", croppedImage)
+	return croppedImage
 
 
 #resize image for better viewing, takes in image, size of larger side
@@ -71,7 +118,7 @@ def possibleRectangleFinder(image):
 
 
 #shows image
-def showImage(imageName, image):
+def showImage(imageName = "test", image):
 	cv2.imshow(imageName, image)
 	cv2.waitKey(0)
 	cv2.destroyAllWindows
@@ -80,29 +127,13 @@ def showImage(imageName, image):
 def writeImage(imageName, image):
 	cv2.imwrite(imageName,image)
 
-#displays region of interest
-def findROI(fileName):
-	#read image
-	image = cv2.imread(fileName)
-
-	#image pre-processing (resize and blur)
-	blurredImage = imageBlur(image)
-	processedImage = imageResize(image, 2000)
-
-	#finds rectangles and picks the top size
-	topRectangle, topRectangleIndex, possibleRectangles = findRectangles(processedImage)
-
-	#draws rectangles onto image
-	cv2.drawContours(processedImage, possibleRectangles, topRectangleIndex, (0, 255, 0), 3 )
-
-	#draws bounding rectangle
-	x,y,w,h = cv2.boundingRect(topRectangle)
-	cv2.rectangle(processedImage,(x,y),(x+w,y+h),(255,0,0),2)
-
-	#draw circle
-	midpoint = (int(x + w * 0.5), int(y + h * 0.5))
-	cv2.circle(processedImage, midpoint, int(w * 0.2), (0,0,255), 3)
-	resizedImage = imageResize(processedImage, 1000)
-	showImage("rectangles", resizedImage)
-
-	return resizedImage
+#detects spot by cropping image, looking for spot, and quantifying spot intensity
+def spotQuantifier(image, bbInfo):
+	croppedImage = imageCrop(image, bbInfo)
+	gray = cv2.cvtColor(croppedImage,cv2.COLOR_BGR2GRAY)
+	showImage("gray", gray)
+	ret,thresh1 = cv2.threshold(gray,127,255,cv2.THRESH_BINARY)
+	showImage("thresh1", thresh1)
+	
+	#quantifies spot
+	return 0
