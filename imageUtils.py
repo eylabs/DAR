@@ -52,8 +52,8 @@ def findROI(fileName, drawCircle = False):
 	return finalProcessedImage, [x, y, w, h]
 
 #processes an image by applying a Gaussian blur
-def imageBlur(image):
-	blurred = cv2.GaussianBlur(image, (5, 5), 0)
+def imageBlur(image, radius = 5):
+	blurred = cv2.GaussianBlur(image, (radius, radius), 0)
 	return blurred
 
 
@@ -143,30 +143,75 @@ def imageErode(image):
 
 #detects spot by cropping image, looking for spot, and quantifying spot intensity
 def spotQuantifier(image, bbInfo):
+	score = 0
 	croppedImage = imageCrop(image, bbInfo)
 	output = croppedImage.copy()
 	gray = cv2.cvtColor(croppedImage, cv2.COLOR_BGR2GRAY) #changes croppedImage as well
-	blurredGray = imageBlur(gray)
-	blurredGrayInvert = imageInvert(blurredGray)
-	erodedBlurredGrayInvert = imageErode(blurredGrayInvert)
-	ret, processedImage = cv2.threshold(erodedBlurredGrayInvert, 127, 255, cv2.THRESH_BINARY)
-	circles = cv2.HoughCircles(processedImage, cv2.HOUGH_GRADIENT, 1, 20, param1 = 100, param2 = 15, minRadius = 10)
-	spotIntensity = 0
-	# ensure at least some circles were found
-	if circles is not None:
-		# convert the (x, y) coordinates and radius of the circles to integers
-		circles = np.round(circles[0, :]).astype("int")
+
+	#################METHOD OF USING HOUGH CIRCLES#########################################
+	#TOO DEPENDENT ON PARAMETER TUNING
+
+	# blurredGray = imageBlur(gray)
+	# blurredGrayInvert = imageInvert(blurredGray)
+	# erodedBlurredGrayInvert = imageErode(blurredGrayInvert)
+	# ret, processedImage = cv2.threshold(erodedBlurredGrayInvert, 127, 255, cv2.THRESH_BINARY)
+
+	# circles = cv2.HoughCircles(processedImage, cv2.HOUGH_GRADIENT, 1, 20, param1 = 100, param2 = 15, minRadius = 10)
+	# # ensure at least some circles were found
+	# if circles is not None:
+	# 	# convert the (x, y) coordinates and radius of the circles to integers
+	# 	circles = np.round(circles[0, :]).astype("int")
 	 
-		# loop over the (x, y) coordinates and radius of the circles
-		for (x, y, r) in circles:
-			# draw the circle in the output image, then draw a rectangle
-			# corresponding to the center of the circle
-			cv2.circle(output, (x, y), r, (0, 255, 0), 4)
-			cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
-			print croppedImage.shape
-			print (x,y,r)
-			quantifyArea = croppedImage[y-20:y+20, x-20:x+20,]
-			#showImage(quantifyArea)
-			spotIntensity = np.average(quantifyArea)
-			showImage(np.hstack([croppedImage, output]))
-	return spotIntensity
+	# 	# loop over the (x, y) coordinates and radius of the circles
+	# 	for (x, y, r) in circles:
+	# 		# draw the circle in the output image, then draw a rectangle
+	# 		# corresponding to the center of the circle
+	# 		cv2.circle(output, (x, y), r, (0, 255, 0), 4)
+	# 		cv2.rectangle(output, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
+	# 		print croppedImage.shape
+	# 		print (x,y,r)
+	# 		quantifyArea = croppedImage[y-20:y+20, x-20:x+20,]
+	# 		#showImage(quantifyArea)
+	# 		score = np.average(quantifyArea)
+	# 		showImage(np.hstack([croppedImage, output]))
+
+	################USE CONTROL SPOT########################
+	#image processing
+	blurredGray = imageBlur(gray, 9)
+
+	#gets maximum value pixel excluding center
+	size = blurredGray.shape[0]
+	er = 0.3 #exclusionRadius
+	blurredGray[size *  (0.5 - er) : size * (0.5 + er) , size * (0.5 - er) : size * (0.5 + er)] = 255
+	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(blurredGray)
+
+	#get baseline value of control spot
+	x = minLoc[0]
+	y = minLoc[1]
+	br = 2 #baseline radius
+	baselineArea = croppedImage[y - br : y + br , x - br, ]
+	baselineIntensity = np.average(baselineArea)
+
+	# uncomment to show where minLoc is
+	cv2.circle(croppedImage, minLoc, 2, (255, 0, 0), 2)
+	# showImage(croppedImage)
+
+	if minLoc[1] < size * 0.5: #control spot in top half of image
+		x = minLoc[0]
+		y = int(minLoc[1] + 0.32 * size) #0.32 is empirically determined
+	else: #control spot in bottom half
+		x = minLoc[0]
+		y = int(minLoc[1] - 0.32 * size)
+
+	#quantify test dot
+	tr = 2 #test dot radius
+	testArea = croppedImage[y - tr : y + tr, x - tr : x + tr,]
+	testIntensity = np.average(testArea)
+
+	#uncomment to show where test circle is
+	cv2.circle(croppedImage, (x, y), 20, (255, 0, 0), 2)
+	showImage(croppedImage)
+
+	#return spot intensity as difference between baseline and test dot 
+	score =  abs(testIntensity - baselineIntensity)
+	return score

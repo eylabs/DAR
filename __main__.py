@@ -15,11 +15,18 @@ def main():
 		processedImage, bbInfo = findROI(fileName)
 		#writes image to folder "processed_" + original folder name
 		processedImageName = getProcessedImageName(fileName)
+		print processedImageName
 		writeImage(processedImageName, processedImage)
 
 		#usees processed image to
 		score = spotQuantifier(processedImage, bbInfo)
 		print score
+		if score < 40:
+			print "POSITIVE"
+			print ""
+		else:
+			print "NEGATIVE"
+			print ""
 
 		###################TODO###############################
 	#CORE
