@@ -141,12 +141,12 @@ def quantifyArea(image, center, radius, showCircle = False):
 	testIntensity = np.average(testArea)
 
 	#uncomment to show where test circle is
-	if showImage:
-		cv2.circle(image, (x, y), 20, (255, 0, 0), 2)
+	cv2.circle(image, (x, y), 20, (255, 0, 0), 2)
+	if showCircle:
 		showImage(image)
 
 	return testIntensity
-	
+
 
 #shows image
 def showImage(image, imageName = "test"):
@@ -231,9 +231,8 @@ def spotQuantifier(image, bbInfo):
 	baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 5),
 		quantifyArea(croppedImage, (x2, y2), 5), quantifyArea(croppedImage, (x3, y3), 5)])
 
-	testIntensity = quantifyArea(croppedImage, (xt,yt), 2, showCircle = True)
+	testIntensity = quantifyArea(croppedImage, (xt,yt), 2, showCircle = False)
 
 	#return spot intensity as difference between baseline and test dot 
 	score =  abs(testIntensity - baselineIntensity)
 	return score, testIntensity, baselineIntensity
-
