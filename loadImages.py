@@ -37,8 +37,8 @@ def getProcessedImageName(fileName):
 	#creates new file name
 	return "%s\%s_processed%s"%(img_dir, fileName.split(".")[0].split("\\")[-1], pconfig.extension[1:])
 
-def writeInfo(info, sampleType):
-	sampleTypeNames = ["positive", "negative", "weak positive"]
+def writeInfo(info, sampleType = 3):
+	sampleTypeNames = ["positive", "negative", "weak positive", "other"]
 	outputFileDirectory = os.path.join(pconfig.MAIN_PATH, "results")
 	try:
 		os.makedirs(outputFileDirectory)

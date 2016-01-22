@@ -7,7 +7,7 @@ if not my_images_path:
 else:
 	MAIN_PATH = my_images_path
 
-FOLDER_OF_INTEREST = "testImages"
+FOLDER_OF_INTEREST = "simpleComparison"
 POSITIVE_CONTROL = "masterPositive"
 NEGATIVE_CONTROL = "masterNegative"
 WEAK_POSITIVE_CONTROL = "masterWeakPositive"
@@ -17,6 +17,9 @@ CONTROL_IMG_DIR = os.path.join(IMG_DIR_PATH, "master")
 POS_CONTROL_FILE_NAME = os.path.join(CONTROL_IMG_DIR, "masterPositive.jpg")
 NEG_CONTROL_FILE_NAME = os.path.join(CONTROL_IMG_DIR, "masterNegative.jpg")
 WEAK_POS_CONTROL_FILE_NAME = os.path.join(CONTROL_IMG_DIR, "masterWeakPositive.jpg")
+
+IMAGE1 = os.path.join(IMG_PATH, "image1.jpg")
+IMAGE2 = os.path.join(IMG_PATH, "image2.jpg")
 
 def controlFileName(sampleType):
 	#positive

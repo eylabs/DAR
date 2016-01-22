@@ -210,28 +210,39 @@ def spotQuantifier(image, bbInfo):
 	# y = minLoc[1]
 	# br = 2 #baseline radius
 
+	#susceptible to single pixel problems
 	#############USE REST OF IMAGE AS BASELINE INTENSITY####################
-	x1 = int(minLoc[0] + 0.32 * size)
-	x2 = int(minLoc[0] - 0.32 * size)
-	x3 = minLoc[0]
-	xt = x3
+	# x1 = int(minLoc[0] + 0.32 * size)
+	# x2 = int(minLoc[0] - 0.32 * size)
+	# x3 = minLoc[0]
+	# xt = x3
 
-	if minLoc[1] < size * 0.5: #control spot in top half of image
-		y1 = int(minLoc[1] + 0.32 * size)
-		y2 = y1
-		y3 = int(size - minLoc[1])
-		yt = y1 #0.32 is empirically determined
+	# if minLoc[1] < size * 0.5: #control spot in top half of image
+	# 	y1 = int(minLoc[1] + 0.32 * size)
+	# 	y2 = y1
+	# 	y3 = int(size - minLoc[1])
+	# 	yt = y1 #0.32 is empirically determined
 
-	else: #control spot in bottom half
-		y1 = int(minLoc[1] - 0.32 * size)
-		y2 = y1
-		y3 = int(size - minLoc[1])
-		yt = y1
+	# else: #control spot in bottom half
+	# 	y1 = int(minLoc[1] - 0.32 * size)
+	# 	y2 = y1
+	# 	y3 = int(size - minLoc[1])
+	# 	yt = y1
+
+	yt = int(size * 0.5)
+	xt = int(size * 0.5)
+	x1 = int(size * 0.2)
+	y1 = int(size * 0.5)
+	x2 = int(size * 0.8)
+	y2 = int(size * 0.5)
+
+
+
 
 	baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 5),
-		quantifyArea(croppedImage, (x2, y2), 5), quantifyArea(croppedImage, (x3, y3), 5)])
+		quantifyArea(croppedImage, (x2, y2), 5)]) # , quantifyArea(croppedImage, (x3, y3), 5)
 
-	testIntensity = quantifyArea(croppedImage, (xt,yt), 2, showCircle = False)
+	testIntensity = quantifyArea(croppedImage, (xt,yt), 2, showCircle = True)
 
 	#return spot intensity as difference between baseline and test dot 
 	score =  abs(testIntensity - baselineIntensity)
