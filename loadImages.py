@@ -34,5 +34,6 @@ def writeInfo(info):
 	with open(outputFileName, "wb") as outfile:
 		outfile.write("RESULTS: \n\n")
 		for ii in info: #imageInfo
-			outfile.write("%s\nScore: %i\nTest Intensity: %i, Baseline Intensity: %i\nResult: %s\n\n" % (ii[0], ii[1], ii[2], ii[3], ii[4]))
+			outfile.write("%s\nNormalized Score: %i\nRaw Score: %i, Test Intensity: %i, Baseline Intensity: %i\nResult: %s\n\n" % 
+				(ii[0], ii[4], ii[1], ii[2], ii[3], ii[4]))
 	return outputFileName

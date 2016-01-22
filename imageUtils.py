@@ -74,6 +74,21 @@ def imageCrop(image, bbInfo):
 	return croppedImage
 
 
+#erodes edges of grayscale to make edges more sharp
+def imageErode(image):
+	kernel = np.ones((5,5),np.uint8)
+	return cv2.erode(image, kernel ,iterations = 1)
+
+
+#must be grayscale
+def imageInvert(image):
+	if len(image.shape) == 2:
+		return cv2.bitwise_not(image)
+	else:
+		print "image not inverted. grayscale needed"
+		return image
+
+
 #resize image for better viewing, takes in image, size of larger side
 def imageResize(image, size):
 	r = float(size) / image.shape[1]
@@ -117,28 +132,32 @@ def possibleRectangleFinder(image):
 	return rectangles
 
 
+def quantifyArea(image, center, radius, showCircle = False):
+	x = center[0]
+	y = center[1]
+
+	#quantify test dot
+	testArea = image[y - radius : y + radius, x - radius : x + radius,]
+	testIntensity = np.average(testArea)
+
+	#uncomment to show where test circle is
+	if showImage:
+		cv2.circle(image, (x, y), 20, (255, 0, 0), 2)
+		showImage(image)
+
+	return testIntensity
+	
+
 #shows image
 def showImage(image, imageName = "test"):
 	cv2.imshow(imageName, image)
 	cv2.waitKey(0)
 	cv2.destroyAllWindows
 
+
 #writes image
 def writeImage(imageName, image):
 	cv2.imwrite(imageName,image)
-
-#must be grayscale
-def imageInvert(image):
-	if len(image.shape) == 2:
-		return cv2.bitwise_not(image)
-	else:
-		print "image not inverted. grayscale needed"
-		return image
-
-#erodes edges of grayscale to make edges more sharp
-def imageErode(image):
-	kernel = np.ones((5,5),np.uint8)
-	return cv2.erode(image, kernel ,iterations = 1)
 
 
 #detects spot by cropping image, looking for spot, and quantifying spot intensity
@@ -185,33 +204,36 @@ def spotQuantifier(image, bbInfo):
 	blurredGray[size *  (0.5 - er) : size * (0.5 + er) , size * (0.5 - er) : size * (0.5 + er)] = 255
 	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(blurredGray)
 
-	#get baseline value of control spot
-	x = minLoc[0]
-	y = minLoc[1]
-	br = 2 #baseline radius
-	baselineArea = croppedImage[y - br : y + br , x - br, ]
-	baselineIntensity = np.average(baselineArea)
+	#############USE CONTROL SPOT AS BASELINE INTENSITY######################
+	# #get baseline value of control spot
+	# x = minLoc[0]
+	# y = minLoc[1]
+	# br = 2 #baseline radius
 
-	# uncomment to show where minLoc is
-	cv2.circle(croppedImage, minLoc, 2, (255, 0, 0), 2)
-	# showImage(croppedImage)
+	#############USE REST OF IMAGE AS BASELINE INTENSITY####################
+	x1 = int(minLoc[0] + 0.32 * size)
+	x2 = int(minLoc[0] - 0.32 * size)
+	x3 = minLoc[0]
+	xt = x3
 
 	if minLoc[1] < size * 0.5: #control spot in top half of image
-		x = minLoc[0]
-		y = int(minLoc[1] + 0.32 * size) #0.32 is empirically determined
+		y1 = int(minLoc[1] + 0.32 * size)
+		y2 = y1
+		y3 = int(size - minLoc[1])
+		yt = y1 #0.32 is empirically determined
+
 	else: #control spot in bottom half
-		x = minLoc[0]
-		y = int(minLoc[1] - 0.32 * size)
+		y1 = int(minLoc[1] - 0.32 * size)
+		y2 = y1
+		y3 = int(size - minLoc[1])
+		yt = y1
 
-	#quantify test dot
-	tr = 2 #test dot radius
-	testArea = croppedImage[y - tr : y + tr, x - tr : x + tr,]
-	testIntensity = np.average(testArea)
+	baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 5),
+		quantifyArea(croppedImage, (x2, y2), 5), quantifyArea(croppedImage, (x3, y3), 5)])
 
-	#uncomment to show where test circle is
-	cv2.circle(croppedImage, (x, y), 20, (255, 0, 0), 2)
-	showImage(croppedImage)
+	testIntensity = quantifyArea(croppedImage, (xt,yt), 2, showCircle = True)
 
 	#return spot intensity as difference between baseline and test dot 
 	score =  abs(testIntensity - baselineIntensity)
 	return score, testIntensity, baselineIntensity
+
