@@ -232,15 +232,19 @@ def spotQuantifier(image, bbInfo):
 	yt = int(size * 0.5)
 	xt = int(size * 0.5)
 	x1 = int(size * 0.2)
-	y1 = int(size * 0.5)
+	y1 = int(size * 0.3)
 	x2 = int(size * 0.8)
-	y2 = int(size * 0.5)
+	y2 = int(size * 0.3)
+	x3 = int(size * 0.2)
+ 	y3 = int(size * 0.7)
+ 	x4 = int(size * 0.8)
+	y4 = int(size * 0.7)
 
 
 
 
 	baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 5),
-		quantifyArea(croppedImage, (x2, y2), 5)]) # , quantifyArea(croppedImage, (x3, y3), 5)
+		quantifyArea(croppedImage, (x2, y2), 5), quantifyArea(croppedImage, (x3, y3), 5), quantifyArea(croppedImage, (x4, y4), 5)])
 
 	testIntensity = quantifyArea(croppedImage, (xt,yt), 2, showCircle = True)
 
