@@ -20,6 +20,11 @@ def writeInfo(info, dirName):
 	outputFileName = os.path.join(outputFileDirectory, "%s.txt" % (dirName))
 	with open(outputFileName, "wb") as outfile:
 		outfile.write("RESULTS: \n\n")
+		outfile.write("Normalized score: The difference between the control score and the image's score. If the score is negative, the test image is darker than the control image.\n")
+		outfile.write("Control Score: The raw score for the master image. \n")
+		outfile.write("Raw Score: The score for the image, calculated by the difference between the background(Baseline Intensity) and the dot (Test Intensity).\n")
+		outfile.write("Test Intensity: The intensity of the dot (if no dot, calculated from center of ROI).\n ")
+		outfile.write("Baseline Intensity: Intensity of the background (calculated from inside the device's membrane ring).\n\n")
 		for ii in info: #imageInfo
 			outfile.write("%s\nNormalized Score: %i\nControl Score: %i, Raw Score: %i, Test Intensity: %i, Baseline Intensity: %i\n\n" % 
 				(ii[0], ii[4], ii[5], ii[1], ii[2], ii[3]))

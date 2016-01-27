@@ -141,7 +141,7 @@ def quantifyArea(image, center, radius, showCircle = False):
 	testIntensity = np.average(testArea)
 
 	#uncomment to show where test circle is
-	cv2.circle(image, (x, y), 20, (255, 0, 0), 2)
+	cv2.circle(image, (x, y), radius, (255, 0, 0), 2)
 	if showCircle:
 		showImage(image)
 
@@ -166,6 +166,64 @@ def spotQuantifier(image, bbInfo):
 	croppedImage = imageCrop(image, bbInfo)
 	output = croppedImage.copy()
 	gray = cv2.cvtColor(croppedImage, cv2.COLOR_BGR2GRAY) #changes croppedImage as well
+	blurredGray = imageBlur(gray)
+	size = gray.shape[0]
+	params = cv2.SimpleBlobDetector_Params()
+	# params.filterByArea = True
+	# params.minArea = 10
+	showImage(blurredGray)
+	detector = cv2.SimpleBlobDetector_create(params)
+	keypoints = detector.detect(blurredGray)
+	im_with_keypoints = cv2.drawKeypoints(blurredGray, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+	showImage(im_with_keypoints)
+	mostLikelyDotCenter = (size * 0.5, size * 0.5)
+	for keypoint in keypoints:
+		if keypoint.size > 40 and keypoint.size < 150:
+			mostLikelyDotCenter = keypoint.pt
+	if len(keypoints) == 0:
+		ret, dotFinder = cv2.threshold(blurredGray.copy(), 160, 255, cv2.THRESH_BINARY)
+		x1 = int(size * 0.5)
+		x2 = int(size * 0.35)
+		x3 = int(size * 0.65)
+		y1 = int(size * 0.65)
+		y2 = int(size * 0.35)
+		if quantifyArea(dotFinder, (x1, y1), 10) < 50:
+			mostLikelyDotCenter = (x1, y1)
+		elif quantifyArea(dotFinder, (x1, y2), 10) < 50:
+			mostLikelyDotCenter = (x1, y2)
+		elif quantifyArea(dotFinder, (x2, y1), 10) < 50:
+			mostLikelyDotCenter = (x2, y1)
+		elif quantifyArea(dotFinder, (x2, y2), 10) < 50:
+			mostLikelyDotCenter = (x2, y2)
+		elif quantifyArea(dotFinder, (x3, y1), 10) < 50:
+			mostLikelyDotCenter = (x3, y1)
+		elif quantifyArea(dotFinder, (x3, y2), 10) < 50:
+			mostLikelyDotCenter = (x3, y2)
+
+	x1 = int(size * 0.2)
+	y1 = int(size * 0.3)
+	x2 = int(size * 0.8)
+	y2 = int(size * 0.3)
+	x3 = int(size * 0.2)
+ 	y3 = int(size * 0.7)
+ 	x4 = int(size * 0.8)
+	y4 = int(size * 0.7)
+	xt = int(mostLikelyDotCenter[0])
+	yt = int(mostLikelyDotCenter[1])
+
+	baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 10),
+		quantifyArea(croppedImage, (x2, y2), 10), quantifyArea(croppedImage, (x3, y3), 10), quantifyArea(croppedImage, (x4, y4), 10)])
+
+	testIntensity = quantifyArea(croppedImage, (xt,yt), 15, showCircle = True)
+
+	#return spot intensity as difference between baseline and test dot 
+	score =  baselineIntensity - testIntensity
+	return score, testIntensity, baselineIntensity
+
+
+
+
+
 
 	#################METHOD OF USING HOUGH CIRCLES#########################################
 	#TOO DEPENDENT ON PARAMETER TUNING
@@ -196,22 +254,23 @@ def spotQuantifier(image, bbInfo):
 
 	################USE CONTROL SPOT########################
 	#image processing
-	blurredGray = imageBlur(gray, 9)
+	# blurredGray = imageBlur(gray, 9)
 
-	#gets maximum value pixel excluding center
-	size = blurredGray.shape[0]
-	er = 0.3 #exclusionRadius
-	blurredGray[size *  (0.5 - er) : size * (0.5 + er) , size * (0.5 - er) : size * (0.5 + er)] = 255
-	(minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(blurredGray)
+	# #gets maximum value pixel excluding center
+	# size = blurredGray.shape[0]
+	# er = 0.3 #exclusionRadius
+	# blurredGray[size *  (0.5 - er) : size * (0.5 + er) , size * (0.5 - er) : size * (0.5 + er)] = 255
+	# (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(blurredGray)
 
-	#############USE CONTROL SPOT AS BASELINE INTENSITY######################
+	# ############USE CONTROL SPOT AS BASELINE INTENSITY######################
 	# #get baseline value of control spot
 	# x = minLoc[0]
 	# y = minLoc[1]
 	# br = 2 #baseline radius
 
-	#susceptible to single pixel problems
-	#############USE REST OF IMAGE AS BASELINE INTENSITY####################
+
+	# #susceptible to single pixel problems
+	# ############USE REST OF IMAGE AS BASELINE INTENSITY####################
 	# x1 = int(minLoc[0] + 0.32 * size)
 	# x2 = int(minLoc[0] - 0.32 * size)
 	# x3 = minLoc[0]
@@ -228,26 +287,3 @@ def spotQuantifier(image, bbInfo):
 	# 	y2 = y1
 	# 	y3 = int(size - minLoc[1])
 	# 	yt = y1
-
-	yt = int(size * 0.5)
-	xt = int(size * 0.5)
-	x1 = int(size * 0.2)
-	y1 = int(size * 0.3)
-	x2 = int(size * 0.8)
-	y2 = int(size * 0.3)
-	x3 = int(size * 0.2)
- 	y3 = int(size * 0.7)
- 	x4 = int(size * 0.8)
-	y4 = int(size * 0.7)
-
-
-
-
-	baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 5),
-		quantifyArea(croppedImage, (x2, y2), 5), quantifyArea(croppedImage, (x3, y3), 5), quantifyArea(croppedImage, (x4, y4), 5)])
-
-	testIntensity = quantifyArea(croppedImage, (xt,yt), 2, showCircle = True)
-
-	#return spot intensity as difference between baseline and test dot 
-	score =  abs(testIntensity - baselineIntensity)
-	return score, testIntensity, baselineIntensity
