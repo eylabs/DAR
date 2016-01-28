@@ -23,6 +23,7 @@ def main():
 	parser.add_argument('masterName', help="Name of the master image. Please put master image in the chosen directory.", widget = "FileChooser")
 	parser.add_argument('--showOriginalImage', help = "(optional), default is False", nargs = "?", default = False)
 	parser.add_argument('--showRegionOfInterest', help = "(optional), default is true", nargs = "?", default = True)
+	parser.add_argument('--verbose', help = "Show Full Information, default is False", nargs = "?", default = False)
 	# parser.add_argument('outputFileName', help="name of the output file")
 	# parser.add_argument('extension', help = "(optional)name of extension (ex: JPG)")
 	args = parser.parse_args()
@@ -40,10 +41,16 @@ def main():
 	else:
 		showRegionOfInterest = False
 
+	verbose = args.verbose
+	if verbose != False or verbose != "false" or verbose != "False":
+		verbose = True
+	else:
+		verbose = False
+
 
 	# extensionFinal = pconfig.extension if (extension == "") else ("*" + extension)
 	extensionFinal = pconfig.extension
-	controlInfo = imageProcessor(masterName, test_dirj, showOriginalImage, showRegionOfInterest, control = True)
+	controlInfo = imageProcessor(masterName, test_dirj, showOriginalImage, showRegionOfInterest, verbose = verbose, control = True)
 	controlScore = controlInfo[1]
 	info = []
 	for fileName in glob.glob(os.path.join(test_dirj, extensionFinal)):
@@ -53,7 +60,7 @@ def main():
 	print "Output File Name:" + writeInfo(info,test_dirj, controlInfo)
 	print "done"
 
-def imageProcessor(fileName, dirName, showOriginalImage, showRegionOfInterest, controlScore = 0, control = False):
+def imageProcessor(fileName, dirName, showOriginalImage, showRegionOfInterest, verbose = False, controlScore = 0, control = False):
 	if control:
 		print ""
 		print "Beginning analysis on folder" + fileName
@@ -73,26 +80,40 @@ def imageProcessor(fileName, dirName, showOriginalImage, showRegionOfInterest, c
 	if not control:
 		normalizedScore = rawScore - controlScore
 		imageInfo.append(normalizedScore)
-		print "Raw Score: " + str(rawScore)
-		print "Test Intensity: " + str(testIntensity)
-		print "Baseline Intensity: " + str(baselineIntensity)
-		print "Image: %s"% fileName
-		print "Score: %i" % normalizedScore
-		print ""
+		if verbose:
+			print "Raw Score: " + str(rawScore)
+			print "Test Intensity: " + str(testIntensity)
+			print "Baseline Intensity: " + str(baselineIntensity)
+			print "Image: %s"% fileName
+			print "Score: %i" % normalizedScore
+			print ""
+		else:
+			print "Raw Score: " + str(rawScore)
+			print "Image: %s"% fileName
+			print ""
 		imageInfo.append(controlScore)
 	else:
-		print "Normalized score: The difference between the control score and the image's score. If the score is negative, the test image is darker than the control image."
-		print "Control Score: The raw score for the master image. "
-		print "Raw Score: The score for the image, calculated by the difference between the background(Baseline Intensity) and the dot (Test Intensity)."
-		print "Test Intensity: The intensity of the dot (if no dot, calculated from center of ROI). "
-		print "Baseline Intensity: Intensity of the background (calculated from inside the device's membrane ring)."
-		print ""
+		if verbose:
+			print "Normalized score: The difference between the control score and the image's score. If the score is negative, the test image is darker than the control image."
+			print "Control Score: The raw score for the master image. "
+			print "Raw Score: The score for the image, calculated by the difference between the background(Baseline Intensity) and the dot (Test Intensity)."
+			print "Test Intensity: The intensity of the dot (if no dot, calculated from center of ROI). "
+			print "Baseline Intensity: Intensity of the background (calculated from inside the device's membrane ring)."
+			print ""
 
-		print "Test Intensity: " + str(testIntensity)
-		print "Baseline Intensity: " + str(baselineIntensity)
-		print "Image Name: %s"% fileName
-		print "Score: %i"%(rawScore)
-		print ""
+			print "Raw Score: " + str(rawScore)
+			print "Test Intensity: " + str(testIntensity)
+			print "Baseline Intensity: " + str(baselineIntensity)
+			print "Image Name: %s"% fileName
+			print ""
+			print "TEST IMAGES:"
+			print ""
+		else:
+			print "Raw Score: " + str(rawScore)
+			print "Image Name: %s"% fileName
+			print ""
+			print "TEST IMAGES:"
+			print ""
 	return imageInfo
 
 
