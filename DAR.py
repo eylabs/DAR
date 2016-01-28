@@ -21,24 +21,39 @@ def main():
 	parser = GooeyParser(description="Compares Images!")
 	parser.add_argument('directoryName', help="Name of the directory to process.", widget = "DirChooser")
 	parser.add_argument('masterName', help="Name of the master image. Please put master image in the chosen directory.", widget = "FileChooser")
+	parser.add_argument('--showOriginalImage', help = "(optional), default is False", nargs = "?", default = False)
+	parser.add_argument('--showRegionOfInterest', help = "(optional), default is true", nargs = "?", default = True)
 	# parser.add_argument('outputFileName', help="name of the output file")
 	# parser.add_argument('extension', help = "(optional)name of extension (ex: JPG)")
 	args = parser.parse_args()
 	test_dirj = args.directoryName
 	masterName = args.masterName
+	showOriginalImage = args.showOriginalImage
+	showRegionOfInterest = args.showRegionOfInterest
+	if showOriginalImage == False:
+		showOriginalImage = False
+	else:
+		showOriginalImage = True
+
+	if showRegionOfInterest == True or showRegionOfInterest == "True" or showRegionOfInterest == "true":
+		showRegionOfInterest = True
+	else:
+		showRegionOfInterest = False
+
+
 	# extensionFinal = pconfig.extension if (extension == "") else ("*" + extension)
 	extensionFinal = pconfig.extension
-	controlInfo = imageProcessor(masterName, test_dirj, control = True)
+	controlInfo = imageProcessor(masterName, test_dirj, showOriginalImage, showRegionOfInterest, control = True)
 	controlScore = controlInfo[1]
 	info = []
 	for fileName in glob.glob(os.path.join(test_dirj, extensionFinal)):
 		if fileName.lower() != os.path.join(test_dirj, masterName).lower():
-			imageInfo = imageProcessor(fileName, test_dirj, controlScore = controlScore)
+			imageInfo = imageProcessor(fileName, test_dirj, showOriginalImage, showRegionOfInterest, controlScore = controlScore)
 			info.append(imageInfo)
 	print "Output File Name:" + writeInfo(info,test_dirj, controlInfo)
 	print "done"
 
-def imageProcessor(fileName, dirName, controlScore = 0, control = False):
+def imageProcessor(fileName, dirName, showOriginalImage, showRegionOfInterest, controlScore = 0, control = False):
 	if control:
 		print ""
 		print "Beginning analysis on folder" + fileName
@@ -47,13 +62,13 @@ def imageProcessor(fileName, dirName, controlScore = 0, control = False):
 	imageInfo = []
 	#finds rectangles, validates rectangles, finds region of interest, returns processed image and bounding box info
 	#optional parameter for ROI "drawCircle = true" to draw circle around ROI
-	processedImage, bbInfo = findROI(os.path.join(dirName, fileName))
+	processedImage, bbInfo = findROI(os.path.join(dirName, fileName), showOriginalImage)
 	#writes image to folder "processed_" + original folder name
 	processedImageName = getProcessedImageName(fileName, dirName)
 	#print processedImageName
 	imageInfo.append(processedImageName)
 	writeImage(processedImageName, processedImage)
-	rawScore, testIntensity, baselineIntensity = spotQuantifier(processedImage, bbInfo)
+	rawScore, testIntensity, baselineIntensity = spotQuantifier(processedImage, bbInfo, showRegionOfInterest)
 	imageInfo.extend([rawScore, testIntensity, baselineIntensity])
 	if not control:
 		normalizedScore = rawScore - controlScore

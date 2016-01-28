@@ -21,9 +21,13 @@ def findRectangles(processedImage):
 	return topRectangle, topRectangleIndex, possibleRectangles
 
 #displays region of interest
-def findROI(fileName, drawCircle = False):
+def findROI(fileName, showOriginalImage, drawCircle = False):
 	#read image
 	image = cv2.imread(fileName)
+	if showOriginalImage:
+		resizedOriginal = image.copy()
+		resizedOriginal = imageResize(resizedOriginal, 1000)
+		showImage(resizedOriginal)
 
 	#image pre-processing (resize and blur)
 	blurredImage = imageBlur(image)
@@ -161,7 +165,7 @@ def writeImage(imageName, image):
 
 
 #detects spot by cropping image, looking for spot, and quantifying spot intensity
-def spotQuantifier(image, bbInfo):
+def spotQuantifier(image, bbInfo, showRegionOfInterest):
 	score = 0
 	croppedImage = imageCrop(image, bbInfo)
 	output = croppedImage.copy()
@@ -234,9 +238,8 @@ def spotQuantifier(image, bbInfo):
 	# baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 10),
 	# 	quantifyArea(croppedImage, (x2, y2), 10), quantifyArea(croppedImage, (x3, y3), 10), quantifyArea(croppedImage, (x4, y4), 10)])
 
-	
 
-	testIntensity = quantifyArea(croppedImage, (yt,xt), 15, showCircle = True)
+	testIntensity = quantifyArea(croppedImage, (yt,xt), 15, showCircle = showRegionOfInterest)
 
 	#return spot intensity as difference between baseline and test dot 
 	score =  baselineIntensity - testIntensity
