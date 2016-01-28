@@ -11,7 +11,7 @@ def getProcessedImageName(fileName, dirName):
 		pass
 	return "%s\%s_processed%s"%(img_dir, fileName.split(".")[0].split("\\")[-1], pconfig.extension[1:])
 
-def writeInfo(info, dirName):
+def writeInfo(info, dirName, controlInfo):
 	outputFileDirectory = os.path.join(pconfig.MAIN_PATH, "results")
 	try:
 		os.makedirs(outputFileDirectory)
@@ -19,6 +19,8 @@ def writeInfo(info, dirName):
 		pass
 	outputFileName = os.path.join(outputFileDirectory, "%s.txt" % (dirName))
 	with open(outputFileName, "wb") as outfile:
+		outfile.write("CONTROL INFO: \n\n")
+		outfile.write("Score: %i, Test Intensity: %i, Baseline Intensity %i\n" % (controlInfo[1], controlInfo[2], controlInfo[3]))
 		outfile.write("RESULTS: \n\n")
 		outfile.write("Normalized score: The difference between the control score and the image's score. If the score is negative, the test image is darker than the control image.\n")
 		outfile.write("Control Score: The raw score for the master image. \n")

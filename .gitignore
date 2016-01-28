@@ -1,3 +1,5 @@
 images
 results
+build
+dist
 cv2.pyd

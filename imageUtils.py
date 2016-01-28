@@ -171,22 +171,24 @@ def spotQuantifier(image, bbInfo):
 	params = cv2.SimpleBlobDetector_Params()
 	# params.filterByArea = True
 	# params.minArea = 10
-	showImage(blurredGray)
 	detector = cv2.SimpleBlobDetector_create(params)
 	keypoints = detector.detect(blurredGray)
 	im_with_keypoints = cv2.drawKeypoints(blurredGray, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-	showImage(im_with_keypoints)
+	#showImage(im_with_keypoints)
+	goodKeypointFound = False
 	mostLikelyDotCenter = (size * 0.5, size * 0.5)
 	for keypoint in keypoints:
 		if keypoint.size > 40 and keypoint.size < 150:
 			mostLikelyDotCenter = keypoint.pt
-	if len(keypoints) == 0:
+			goodKeypointFound = True
+	if len(keypoints) == 0 or goodKeypointFound == False:
 		ret, dotFinder = cv2.threshold(blurredGray.copy(), 160, 255, cv2.THRESH_BINARY)
 		x1 = int(size * 0.5)
 		x2 = int(size * 0.35)
 		x3 = int(size * 0.65)
 		y1 = int(size * 0.65)
 		y2 = int(size * 0.35)
+		#print dotFinder
 		if quantifyArea(dotFinder, (x1, y1), 10) < 50:
 			mostLikelyDotCenter = (x1, y1)
 		elif quantifyArea(dotFinder, (x1, y2), 10) < 50:
@@ -200,21 +202,41 @@ def spotQuantifier(image, bbInfo):
 		elif quantifyArea(dotFinder, (x3, y2), 10) < 50:
 			mostLikelyDotCenter = (x3, y2)
 
-	x1 = int(size * 0.2)
-	y1 = int(size * 0.3)
-	x2 = int(size * 0.8)
-	y2 = int(size * 0.3)
-	x3 = int(size * 0.2)
- 	y3 = int(size * 0.7)
- 	x4 = int(size * 0.8)
-	y4 = int(size * 0.7)
-	xt = int(mostLikelyDotCenter[0])
-	yt = int(mostLikelyDotCenter[1])
+	# x1 = int(size * 0.2)
+	# y1 = int(size * 0.3)
+	# x2 = int(size * 0.8)
+	# y2 = int(size * 0.3)
+	# x3 = int(size * 0.2)
+ # 	y3 = int(size * 0.7)
+ # 	x4 = int(size * 0.8)
+	# y4 = int(size * 0.7)
+	xt = int(mostLikelyDotCenter[1])
+	yt = int(mostLikelyDotCenter[0])
+	xxr = min(size - 1, xt + 30)
+	xxl = max(0, xt - 30)
+	yxu = max(0, yt - 30)
+	yxd = min(size - 1, yt + 30)
+	counter = 0
+	total = 0
+	thingy = blurredGray.copy()
+	for xc in range(30,size-30):
+		for yc in range(30,size-30):
+			if not(xc < xxr and xc > xxl and yc > yxu and yc < yxd):
+				counter += 1
+				total += blurredGray[xc, yc]
+				thingy[xc,yc] = 255
+	average = total/counter
+	baselineIntensity = average
 
-	baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 10),
-		quantifyArea(croppedImage, (x2, y2), 10), quantifyArea(croppedImage, (x3, y3), 10), quantifyArea(croppedImage, (x4, y4), 10)])
+	 #exclusionRadius
+		# blurredGray[size *  (0.5 - er) : size * (0.5 + er) , size * (0.5 - er) : size * (0.5 + er)] = 255
 
-	testIntensity = quantifyArea(croppedImage, (xt,yt), 15, showCircle = True)
+	# baselineIntensity = np.average([quantifyArea(croppedImage, (x1, y1), 10),
+	# 	quantifyArea(croppedImage, (x2, y2), 10), quantifyArea(croppedImage, (x3, y3), 10), quantifyArea(croppedImage, (x4, y4), 10)])
+
+	
+
+	testIntensity = quantifyArea(croppedImage, (yt,xt), 15, showCircle = True)
 
 	#return spot intensity as difference between baseline and test dot 
 	score =  baselineIntensity - testIntensity
